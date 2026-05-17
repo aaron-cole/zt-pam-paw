@@ -1,0 +1,37 @@
+global:
+  openshift: true
+injector:
+  image:
+    repository: "quayhostname.example.com:8443/hashicorp/vault-k8s"
+    tag: "1.7.0-ubi"
+  agentImage:
+    repository: "quayhostname.example.com:8443/hashicorp/vault"
+    tag: "1.20.4-ubi"
+server:
+  dev:
+    enabled: true
+  ha:
+    enabled: false
+  image:
+    repository: "quayhostname.example.com:8443/hashicorp/vault"
+    tag: "1.20.4-ubi"
+  readinessProbe:
+    path: "/v1/sys/health?uninitcode=204"
+  authDelegator:
+    enabled: true
+  serviceAccount:
+    create: true
+  route:
+    enabled: true
+    tls:
+      termination: passthrough
+ui:
+  enabled: true
+csi:
+  image:
+    repository: "quayhostname.example.com:8443/hashicorp/vault-csi-provider"
+    tag: "1.6.0-ubi"
+  agent:
+    image:
+      repository: "quayhostname.example.com:8443/hashicorp/vault"
+      tag: "1.20.4-ubi" 

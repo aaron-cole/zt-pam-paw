@@ -1,0 +1,23 @@
+kind: ImageSetConfiguration
+apiVersion: mirror.openshift.io/v2alpha1
+mirror:
+  helm:
+    repositories:
+      # Official Vault Helm Chart
+      - name: vault
+        url: https://helm.releases.hashicorp.com
+        charts:
+          - name: vault
+            version: "0.31.0"
+  additionalImages:
+  # These are the images the chart repo points to for an OpenShift install
+  - name: registry.connect.redhat.com/hashicorp/vault-k8s:1.7.0-ubi
+  - name: registry.connect.redhat.com/hashicorp/vault:1.20.4-ubi
+  - name: registry.connect.redhat.com/hashicorp/vault-csi-provider:1.6.0-ubi
+  operators:
+  - catalog: registry.redhat.io/redhat/certified-operator-index:v4.19
+    packages:
+      # Vault Secrets Operator
+      - name: vault-secrets-operator
+        channels:
+          - name: stable
