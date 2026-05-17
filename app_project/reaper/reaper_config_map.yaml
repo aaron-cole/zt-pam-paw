@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workspace-reaper-code
+  namespace: dynamic-workspaces
+data:
+  reaper.py: |
+    import os
+    from datetime import datetime, timezone
+    from kubernetes import client, config
+
+    MAX_AGE_HOURS = 8
+    NAMESPACE = "dynamic-workspaces"
+
+    def run_reaper():
+        print(f"Starting Workspace Reaper in namespace: {NAMESPACE}")
+        
+        # Load the internal OpenShift ServiceAccount token
+        config.load_incluster_config()
+        v1_api = client.CoreV1Api()
+        custom_api = client.CustomObjectsApi()
+
+        # Find all pods labeled as our dynamic apps
+        pods = v1_api.list_namespaced_pod(namespace=NAMESPACE, label_selector="app=dynamic-user-app")
+        
+        deleted_count = 0
+        for pod in pods.items:
+            creation_time = pod.metadata.creation_timestamp
+            age = datetime.now(timezone.utc) - creation_time
+            
+            # Check if older than 8 hours
+            if age.total_seconds() > (MAX_AGE_HOURS * 3600):
+                user_safe_name = pod.metadata.labels.get("user")
+                if not user_safe_name:
+                    continue
+                    
+                print(f"Reaping expired workspace for: {user_safe_name} (Age: {round(age.total_seconds()/3600, 2)} hours)")
+                
+                # 1. Delete Pod
+                try:
+                    v1_api.delete_namespaced_pod(name=pod.metadata.name, namespace=NAMESPACE)
+                except Exception as e: print(f"Pod delete error: {e}")
+                
+                # 2. Delete Service
+                try:
+                    v1_api.delete_namespaced_service(name=f"svc-{user_safe_name}", namespace=NAMESPACE)
+                except Exception as e: print(f"Service delete error: {e}")
+                
+                # 3. Delete Route
+                try:
+                    custom_api.delete_namespaced_custom_object(
+                        group="route.openshift.io",
+                        version="v1",
+                        namespace=NAMESPACE,
+                        plural="routes",
+                        name=f"route-{user_safe_name}"
+                    )
+                except Exception as e: print(f"Route delete error: {e}")
+                
+                deleted_count += 1
+                
+        print(f"Reaper finished. Swept {deleted_count} expired workspaces.")
+
+    if __name__ == "__main__":
+        run_reaper()

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Workspace Launcher</title>
+    
+    <script src="config.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/keycloak-js@22.0.0/dist/keycloak.min.js"></script>
+    
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f4; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 100%; }
+        button { background-color: #0066cc; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 15px; transition: background-color 0.2s; }
+        button:hover { background-color: #0052a3; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        #status { margin-top: 15px; font-size: 14px; color: #555; min-height: 20px; word-break: break-all; }
+        .hidden { display: none; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #0066cc; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 15px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Workspace Provisioner</h2>
+    <div id="user-info">Authenticating...</div>
+    
+    <button id="login-btn" class="hidden" onclick="keycloak.login()">Log In via Keycloak</button>
+    <button id="launch-btn" class="hidden" onclick="launchContainer()">Start My Container</button>
+    
+    <div id="loading" class="hidden">
+        <div class="spinner"></div>
+    </div>
+    <div id="status"></div>
+</div>
+
+<script>
+    // --- Configuration (Pulled from window.APP_CONFIG provided by config.js) ---
+    const KEYCLOAK_CONFIG = {
+        url: window.APP_CONFIG.KEYCLOAK_URL,
+        realm: window.APP_CONFIG.KEYCLOAK_REALM,
+        clientId: window.APP_CONFIG.KEYCLOAK_CLIENT_ID
+    };
+    const DISPATCHER_API_URL = window.APP_CONFIG.DISPATCHER_API_URL;
+
+    // --- Initialization ---
+    let keycloak = new Keycloak(KEYCLOAK_CONFIG);
+
+    keycloak.init({ onLoad: 'check-sso', pkceMethod: 'S256' }).then(function(authenticated) {
+        if (authenticated) {
+            document.getElementById('user-info').innerText = `Welcome, ${keycloak.tokenParsed.preferred_username}!`;
+            document.getElementById('launch-btn').classList.remove('hidden');
+        } else {
+            document.getElementById('user-info').innerText = "Please log in to continue.";
+            document.getElementById('login-btn').classList.remove('hidden');
+        }
+    }).catch(function(error) {
+        console.error("Keycloak initialization failed", error);
+        document.getElementById('user-info').innerText = "Failed to initialize authentication. Check console for details.";
+    });
+
+    // --- API Call & Provisioning ---
+    async function launchContainer() {
+        const btn = document.getElementById('launch-btn');
+        const statusEl = document.getElementById('status');
+        const loadingEl = document.getElementById('loading');
+        
+        btn.disabled = true;
+        loadingEl.classList.remove('hidden');
+        statusEl.innerText = "Requesting resources from Dispatcher...";
+
+        try {
+            // Ensure token is fresh before making API call (refreshes if expiring within 30s)
+            await keycloak.updateToken(30);
+
+            const response = await fetch(DISPATCHER_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${keycloak.token}`
+                }
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.detail || "API returned an error.");
+            }
+
+            const data = await response.json();
+            statusEl.innerText = `Resources created! Waiting for OpenShift Router to configure ${data.url}...`;
+            
+            // Poll the newly created route until it's ready
+            pollRoute(data.url);
+
+        } catch (error) {
+            loadingEl.classList.add('hidden');
+            statusEl.innerText = `Error: ${error.message}`;
+            statusEl.style.color = "red";
+            btn.disabled = false;
+        }
+    }
+
+    // --- Route Polling ---
+    // OpenShift HAProxy can take a few seconds to map the new Route. 
+    // We poll until we get a successful response, then redirect the user.
+    async function pollRoute(url) {
+        const maxAttempts = 30; // 60 seconds total polling time
+        let attempts = 0;
+
+        const interval = setInterval(async () => {
+            attempts++;
+            try {
+                // Using no-cors because we just want to see if the DNS/Router resolves
+                // without throwing a 503 Service Unavailable (OpenShift's default for unmapped routes).
+                const res = await fetch(url, { mode: 'no-cors' });
+                
+                // If the fetch succeeds (doesn't throw a network error), we assume HAProxy is ready.
+                clearInterval(interval);
+                document.getElementById('status').innerText = "Container ready! Redirecting...";
+                document.getElementById('status').style.color = "green";
+                
+                // Slight delay for UX before redirecting
+                setTimeout(() => { window.location.href = url; }, 1000);
+            } catch (e) {
+                if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    document.getElementById('status').innerText = "Timed out waiting for Route. The container may still be starting. Try clicking the link manually: " + url;
+                    document.getElementById('loading').classList.add('hidden');
+                }
+            }
+        }, 2000); // Check every 2 seconds
+    }
+</script>
+
+</body>
+</html>
