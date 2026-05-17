@@ -1,0 +1,189 @@
+apiVersion: v1beta1
+kind: AgentConfig
+metadata:
+  name: ocp
+rendezvousIP: 10.10.10.10  #First master node IP
+additionalNTPSources:
+- 10.10.10.2 #Add NTP Servers
+- 10.10.10.100
+hosts:
+- hostname: hostname1.example.com
+  role: master
+  interfaces:
+  - name: eno1
+    macAddress: 00:ff:00:ff:00:ff #Replace MAC with real one
+  rootDeviceHints:
+    deviceName: "/dev/sda"
+  networkConfig: #NMSTATE Config
+    interfaces:
+      - name: eno1
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false  #Configure for STatic
+          address:
+            - ip: 10.10.10.30
+              prefix-length: 24
+        ipv6:
+          enabled: false
+    dns-resolver:
+      config:
+        server:
+          - 10.10.10.200 #Replace with DNS
+    routes:
+      config:
+        - destination: 0.0.0.0/0
+          next-hop-address: 10.10.10.1 #Replace and replicate above
+          next-hop-interface: eno1
+          table-id: 254
+- hostname: hostname2.example.com
+  role: master
+  interfaces:
+  - name: eno1
+    macAddress: 00:ff:00:ff:00:ff #Replace MAC with real one
+  rootDeviceHints:
+    deviceName: "/dev/sda"
+  networkConfig:
+    interfaces:
+      - name: eno1
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false  #Configure for STatic
+          address:
+            - ip: 10.10.10.31
+              prefix-length: 24
+        ipv6:
+          enabled: false
+    dns-resolver:
+      config:
+        server:
+          - 10.10.10.200
+    routes:
+      config:
+        - destination: 0.0.0.0/0
+          next-hop-address: 10.10.10.1 #Replace and replicate above
+          next-hop-interface: eno1
+          table-id: 254
+- hostname: hostname3.example.com
+  role: master
+  interfaces:
+  - name: eno1
+    macAddress: 00:ff:00:ff:00:ff #Replace MAC with real one
+  rootDeviceHints:
+    deviceName: "/dev/sda"
+  networkConfig:
+    interfaces:
+      - name: eno1
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false  #Configure for STatic
+          address:
+            - ip: 10.10.10.32
+              prefix-length: 24
+        ipv6:
+          enabled: false
+    dns-resolver:
+      config:
+        server:
+          - 10.10.10.200
+    routes:
+      config:
+        - destination: 0.0.0.0/0
+          next-hop-address: 10.10.10.1 #Replace and replicate above
+          next-hop-interface: eno1
+          table-id: 254
+- hostname: hostname4.example.com
+  role: worker
+  interfaces:
+  - name: eno1
+    macAddress: 00:ff:00:ff:00:ff #Replace MAC with real one
+  rootDeviceHints:
+    deviceName: "/dev/sda"
+  networkConfig:
+    interfaces:
+      - name: eno1
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false  #Configure for STatic
+          address:
+            - ip: 10.10.10.33
+              prefix-length: 24
+        ipv6:
+          enabled: false
+    dns-resolver:
+      config:
+        server:
+          - 10.10.10.200
+    routes:
+      config:
+        - destination: 0.0.0.0/0
+          next-hop-address: 10.10.10.1 #Replace and replicate above
+          next-hop-interface: eno1
+          table-id: 254
+- hostname: hostname5.example.com
+  role: worker
+  interfaces:
+  - name: eno1
+    macAddress: 00:ff:00:ff:00:ff #Replace MAC with real one
+  rootDeviceHints:
+    deviceName: "/dev/sda"
+  networkConfig:
+    interfaces:
+      - name: eno1
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false  #Configure for STatic
+          address:
+            - ip: 10.10.10.34
+              prefix-length: 24
+        ipv6:
+          enabled: false
+    dns-resolver:
+      config:
+        server:
+          - 10.10.10.200
+    routes:
+      config:
+        - destination: 0.0.0.0/0
+          next-hop-address: 10.10.10.1 #Replace and replicate above
+          next-hop-interface: eno1
+          table-id: 254
+- hostname: hostname6.example.com
+  role: worker
+  interfaces:
+  - name: eno1
+    macAddress: 00:ff:00:ff:00:ff #Replace MAC with real one
+  rootDeviceHints:
+    deviceName: "/dev/sda"
+  networkConfig:
+    interfaces:
+      - name: eno1
+        type: ethernet
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: false  #Configure for STatic
+          address:
+            - ip: 10.10.10.35
+              prefix-length: 24
+        ipv6:
+          enabled: false
+    dns-resolver:
+      config:
+        server:
+          - 10.10.10.200
+    routes:
+      config:
+        - destination: 0.0.0.0/0
+          next-hop-address: 10.10.10.1 #Replace and replicate above
+          next-hop-interface: eno1
+          table-id: 254

@@ -1,0 +1,49 @@
+# -----------------------------------------------------------------------------
+# IMPORTANT PREP
+# - UPI on vSphere: YOU provision VMs, LBs, and DNS. The installer only generates Ignition.
+#   Use: openshift-install create manifests && openshift-install create ignition-configs
+# -----------------------------------------------------------------------------
+apiVersion: v1
+baseDomain: example.com
+metadata:
+  name: ocp
+
+fips: true 
+
+networking:
+  networkType: OVNKubernetes
+  machineNetwork:
+  - cidr: 10.10.10.0/24
+
+controlPlane:
+- name: master
+  replicas: 3   # You will create/boot 3 masters
+compute:
+- name: worker
+  replicas: 3   # You will create/boot 3 workers
+
+sshKey: 'ssh-rsa xxxxxxx' # Replcae with sshkey to put on the nodes for coreos
+pullSecret: '{"auths":{"quayhostname.example.com:8443":{"auth":"xxxxx"}}}'  #This gets replaced with the auth.json file put into a single file
+
+platform:
+  baremetal:
+    apiVIPs:
+    - 10.10.10.18
+    ingressVIPs:
+    - 10.10.10.17
+
+imageDigestSources:
+  - mirrors:
+      - quayhostname.example.com:8443/openshift/release
+    source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
+  - mirrors:
+      - quayhostname.example.com:8443/openshift/release-images
+    source: quay.io/openshift-release-dev/ocp-release
+
+additionalTrustBundle: |         # Optional Cert of miniquay
+  -----BEGIN CERTIFICATE-----
+  xxxxx
+  xxxxx
+  -----END CERTIFICATE-----
+additionalTrustBundlePolicy: Always
+
