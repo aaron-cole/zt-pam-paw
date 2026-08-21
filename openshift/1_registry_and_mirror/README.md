@@ -29,10 +29,11 @@ https://docs.redhat.com/en/documentation/openshift_container_platform/4.19/html/
 
 ***note*** if you don't use TMPFS filesystem for /tmp then you need to do this too:
 - Copy the /usr/lib/tmpfiles.d/podman.conf to /etc/tmpfiles.d/
-- We need to add in the following 2 lines so that way containers can be restarted on reboot without issues.
+- We need to add in the following 2 lines to our copied file so that way containers can be restarted on reboot without issues.
+```bash
 R! /tmp/storage-run-*/containers/
 R! /tmp/storage-run-*/libpod/tmp/
-
+```
 
 
 ---The openshift mirror prep (performed on upstream connected server)---
