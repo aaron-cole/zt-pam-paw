@@ -11,10 +11,11 @@ References:
 1) Downlod the mirror-registry tarball and take to disconnected environment
 
 2) Install - ***as non-root user***
+```bash
 ./mirror-registry install \
   --quayHostname <host_example_com> \
   --quayRoot /opt/quay
-  
+```  
 3) Use the username/password to log in.
 podman login -u init \
   -p <password> \
