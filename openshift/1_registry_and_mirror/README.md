@@ -17,11 +17,12 @@ References:
   --quayRoot /opt/quay
 ```  
 3) Use the username/password to log in.
+```bash
 podman login -u init \
   -p <password> \
   <host_example_com>:8443 \
   --tls-verify=false
-
+```
 --Info on replacing self signed certs
 https://docs.redhat.com/en/documentation/openshift_container_platform/4.19/html/disconnected_environments/installing-mirroring-creating-registry#mirror-registry-ssl-cert-replace_installing-mirroring-creating-registry
 
