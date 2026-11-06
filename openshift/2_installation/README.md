@@ -35,7 +35,9 @@ https://docs.redhat.com/en/documentation/openshift_container_platform/4.19/html-
 
 -Create agent_config.yaml and ensure configuration - and create a backup - it gets consumed when we use it
 
-
+-Additional Packages that may catch up you
+1) nmstate - gotta have it installed so it can check the configs to create the images.
+   
 -Since FIPS matters to me, extract the openshift-install-fips command - server i'm doing this on is in FIPS mode too - so it matters also.
 
 1) find the image from your quay, I used the quay webui - it should be something like "openshift/release-image@sha256:xxxxxxxx" - copy the podman pull command for it
